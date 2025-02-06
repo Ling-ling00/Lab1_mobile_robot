@@ -87,6 +87,11 @@ def generate_launch_description():
         executable="spawner",
         arguments=["velocity_controllers", "--controller-manager", "/controller_manager"],
     )
+    position_controller_spawner = Node(
+        package="controller_manager",
+        executable="spawner",
+        arguments=["joint_trajectory_position_controller", "--controller-manager", "/controller_manager"],
+    )
 
     # Launch!
     return LaunchDescription(
@@ -96,6 +101,7 @@ def generate_launch_description():
             rsp,
             rviz,
             joint_state_broadcaster_spawner,
-            robot_controller_spawner
+            robot_controller_spawner,
+            position_controller_spawner
         ]
     )
