@@ -7,7 +7,7 @@ from gazebo_msgs.msg import LinkStates
 from nav_msgs.msg import Odometry
 import numpy as np
 from tf_transformations import quaternion_from_euler
-
+import yaml
 
 class DoubleTrackNode(Node):
     def __init__(self):
@@ -24,6 +24,8 @@ class DoubleTrackNode(Node):
 
         self.odom = [0,0,0,0,0,0] #x, y, theta, beta, v, w
         self.vel_rear = [0,0] #right, left
+        self.odom_file = open("double_track.yaml", "a")
+
 
     def timer_callback(self):
         new_odom = [0,0,0,0,0,0]
@@ -74,6 +76,47 @@ class DoubleTrackNode(Node):
         odom_msg.twist.twist.linear.x = odom[4]
         odom_msg.twist.twist.angular.z = odom[5]
         self.odom_publisher1.publish(odom_msg)
+
+        # Convert the timestamp to seconds (including nanoseconds).
+        stamp = odom_msg.header.stamp
+        timestamp_sec = stamp.sec + stamp.nanosec * 1e-9
+
+        # Extract pose and twist information.
+        pos = odom_msg.pose.pose.position
+        ori = odom_msg.pose.pose.orientation
+        lin = odom_msg.twist.twist.linear
+        ang = odom_msg.twist.twist.angular
+
+         # Create a dictionary to represent the odometry message.
+        data = {
+            'timestamp': timestamp_sec,
+            'position': {
+                'x': pos.x,
+                'y': pos.y,
+                'z': pos.z
+            },
+            'orientation': {
+                'x': ori.x,
+                'y': ori.y,
+                'z': ori.z,
+                'w': ori.w
+            },
+            'linear': {
+                'x': lin.x,
+                'y': lin.y,
+                'z': lin.z
+            },
+            'angular': {
+                'x': ang.x,
+                'y': ang.y,
+                'z': ang.z
+            }
+        }
+
+        # Append the new data as a YAML document.
+        self.odom_file.write("---\n")
+        yaml.dump(data, self.odom_file)
+        self.odom_file.flush()
 
 
 def main(args=None):
