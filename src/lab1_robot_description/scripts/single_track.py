@@ -6,12 +6,12 @@ from control_msgs.msg import DynamicJointState
 from gazebo_msgs.msg import LinkStates
 from nav_msgs.msg import Odometry
 import numpy as np
-from tf_transformations import quaternion_from_euler
+from tf_transformations import quaternion_from_euler, euler_from_quaternion
 import yaml
 
-class DoubleTrackNode(Node):
+class SingleTrackNode(Node):
     def __init__(self):
-        super().__init__('double_track_node')
+        super().__init__('single_track_node')
         
         self.dt = 0.01
 
@@ -19,63 +19,70 @@ class DoubleTrackNode(Node):
 
         self.create_subscription(DynamicJointState, '/dynamic_joint_states', self.joint_states_callback, 10)
         self.create_subscription(LinkStates, '/gazebo/link_states', self.link_states_callback, 10)
-
-        self.odom_publisher1 = self.create_publisher(Odometry, "/double_track_odom", 10)
+        self.odom_publisher1 = self.create_publisher(Odometry, "/single_track_odom", 10)
 
         self.odom = [0,0,0,0,0,0] #x, y, theta, beta, v, w
         self.vel_rear = [0,0] #right, left
+        self.delta = 0.0
+        self.w = 0.0
         self.direction = [0,0]
-        self.odom_file = open("double_track.yaml", "a")
 
+        self.odom_file = open("single_track.yaml", "a")
 
     def timer_callback(self):
         new_odom = [0,0,0,0,0,0]
         new_odom[0] = self.odom[0] + (self.odom[4] * self.dt * np.cos(self.odom[3] + self.odom[2] + (self.odom[5]*self.dt/2)))
         new_odom[1] = self.odom[1] + (self.odom[4] * self.dt * np.sin(self.odom[3] + self.odom[2] + (self.odom[5]*self.dt/2)))
         new_odom[2] = self.odom[2] + (self.odom[5]*self.dt)
+        new_odom[3] = np.arctan((0.2 / 2) * np.tan(self.delta))
         new_odom[4] = (self.vel_rear[0] + self.vel_rear[1])/2
-        new_odom[5] = (self.vel_rear[0] - self.vel_rear[1])/0.14 #devide by distnce between 2 wheel
+        new_odom[5] = (self.odom[4] / 0.2) * np.tan(self.delta)
         self.odom = new_odom
         self.odom_pub(self.odom)
 
     def joint_states_callback(self, msg:DynamicJointState):
-        index_l, index_r = None, None
+        index_l, index_r, index_lr, index_rr = None, None, None, None
         for i in range(len(msg.joint_names)):
-            if msg.joint_names[i] == "left_joint_b":
+            if msg.joint_names[i] == "left_joint_s":
                 index_l = i
-            elif msg.joint_names[i] == "right_joint_b":
+            elif msg.joint_names[i] == "right_joint_s":
                 index_r = i
+            elif msg.joint_names[i] == "left_joint_b":
+                index_lr = i
+            elif msg.joint_names[i] == "right_joint_b":
+                index_rr = i
 
         if index_l is not None and index_r is not None:
-            if msg.interface_values[index_l].values[1] > 0:
+            self.delta = (msg.interface_values[index_r].values[0] + msg.interface_values[index_l].values[0])/2
+        if index_lr is not None and index_rr is not None:
+            if msg.interface_values[index_lr].values[1] > 0:
                 self.direction[1] = 1
             else:
                 self.direction[1] = -1
 
-            if msg.interface_values[index_r].values[1] > 0:
+            if msg.interface_values[index_rr].values[1] > 0:
                 self.direction[0] = 1
             else:
                 self.direction[0] = -1
-            
-            # self.vel_rear = [msg.interface_values[index_r].values[1]*0.045, msg.interface_values[index_l].values[1]*0.045]  
 
     def link_states_callback(self, msg:LinkStates):
-        index_l, index_r = None, None
+        index_l, index_r = None, None, 
         for i in range(len(msg.name)):
             if msg.name[i] == "example::left_wheel_b":
                 index_l = i
             elif msg.name[i] == "example::right_wheel_b":
                 index_r = i
-
+            
         if index_l is not None and index_r is not None:
             self.vel_rear = [np.sqrt(msg.twist[index_r].linear.x**2 + msg.twist[index_r].linear.y**2)*self.direction[0],
                               np.sqrt(msg.twist[index_l].linear.x**2 + msg.twist[index_l].linear.y**2)*self.direction[1]]
-    
+
+
     def odom_pub(self, odom):
         odom_msg = Odometry()
         odom_msg.header.stamp = self.get_clock().now().to_msg()
         odom_msg.header.frame_id = "world"
-        odom_msg.child_frame_id = "double"
+        odom_msg.child_frame_id = "single"
         odom_msg.pose.pose.position.x = odom[0]
         odom_msg.pose.pose.position.y = odom[1]
 
@@ -130,10 +137,12 @@ class DoubleTrackNode(Node):
         yaml.dump(data, self.odom_file)
         self.odom_file.flush()
 
+        
+
 
 def main(args=None):
     rclpy.init(args=args)
-    node = DoubleTrackNode()
+    node = SingleTrackNode()
     rclpy.spin(node)
     node.destroy_node()
     rclpy.shutdown()

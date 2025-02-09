@@ -4,7 +4,6 @@ from ament_index_python.packages import get_package_share_directory
 from launch import LaunchDescription
 from launch_ros.actions import Node
 import os
-from ament_index_python.packages import get_package_share_directory
 from launch import LaunchDescription
 from launch.substitutions import LaunchConfiguration
 from launch.actions import DeclareLaunchArgument, IncludeLaunchDescription
@@ -61,7 +60,7 @@ def generate_launch_description():
         arguments=[
             "-topic", "/robot_description",
             "-entity", "example",
-            "-x", "10.0",
+            "-x", "0.0",
             "-y", "0.0",
             "-z", "0.0"],
         output = "screen"

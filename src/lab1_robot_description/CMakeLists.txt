@@ -32,6 +32,7 @@ install(PROGRAMS
   scripts/controller2.py
   scripts/yaw_rate.py
   scripts/double_track.py
+  scripts/single_track.py
   scripts/model_odom.py
   DESTINATION lib/${PROJECT_NAME}
 )
