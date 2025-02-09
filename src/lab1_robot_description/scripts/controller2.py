@@ -17,15 +17,15 @@ class controller(Node):
         self.create_subscription(Twist, 'cmd_vel', self.cmd_vel_callback, 10)
 
         self.wheels_pub = self.create_publisher(Float64MultiArray, '/velocity_controllers/commands', 10)
-
+        self.wheels_pub_position = self.create_publisher(Float64MultiArray, '/position_controller/commands', 10)
 
 
     def timmer_callback(self):
         pass
     
     def cmd_vel_callback(self,msg:Twist):
-        wheelbase = 0.20  
-        track_width = 0.15  
+        wheelbase = 0.20
+        track_width = 0.14
         wheel_radius = 0.045 
 
         v = msg.linear.x  
@@ -52,14 +52,34 @@ class controller(Node):
             speed_rear_inner = speed_front_inner
             speed_rear_outer = speed_front_outer
 
-        rotation_deg_front_inner = math.degrees(steering_angle_inner)
-        rotation_deg_front_outer = math.degrees(steering_angle_outer)
+        # rotation_deg_front_inner = math.degrees(steering_angle_inner)
+        # rotation_deg_front_outer = math.degrees(steering_angle_outer)
 
-        msg_out = Float64MultiArray()
-        msg_out.data = [rotation_deg_front_inner,rotation_deg_front_outer, speed_front_inner,         
-        speed_front_outer, speed_rear_inner,speed_rear_outer]
+        # msg_out = Float64MultiArray()
+        # msg_out.data = [rotation_deg_front_inner,rotation_deg_front_outer, speed_front_inner,         
+        # speed_front_outer, speed_rear_inner,speed_rear_outer]
 
-        self.wheels_pub.publish(msg_out)
+        # self.wheels_pub.publish(msg_out)
+
+        print(steering_angle_inner,steering_angle_outer)
+
+        pub_msg = Float64MultiArray()
+        pub_msg.data = [
+        speed_front_inner,
+        speed_front_outer,
+        speed_rear_inner,
+        speed_rear_outer
+        ]
+
+        self.wheels_pub.publish(pub_msg)
+
+        pub_msg_position = Float64MultiArray()
+        pub_msg_position.data = [
+            steering_angle_inner,
+            steering_angle_outer
+        ]
+
+        self.wheels_pub_position.publish(pub_msg_position)
 
 
 

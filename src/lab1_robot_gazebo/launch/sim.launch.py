@@ -61,7 +61,7 @@ def generate_launch_description():
         arguments=[
             "-topic", "/robot_description",
             "-entity", "example",
-            "-x", "0.0",
+            "-x", "10.0",
             "-y", "0.0",
             "-z", "0.0"],
         output = "screen"
@@ -90,7 +90,7 @@ def generate_launch_description():
     position_controller_spawner = Node(
         package="controller_manager",
         executable="spawner",
-        arguments=["joint_trajectory_position_controller", "--controller-manager", "/controller_manager"],
+        arguments=["position_controller", "--controller-manager", "/controller_manager"],
     )
 
     # Launch!

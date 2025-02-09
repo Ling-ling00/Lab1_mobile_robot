@@ -16,7 +16,9 @@ class controller(Node):
 
         self.create_subscription(Twist, 'cmd_vel', self.cmd_vel_callback, 10)
 
-        self.wheels_pub = self.create_publisher(Float64MultiArray, '/velocity_controllers/commands', 10)
+        self.wheels_pub_velo = self.create_publisher(Float64MultiArray, '/velocity_controllers/commands', 10)
+        self.wheels_pub_position = self.create_publisher(Float64MultiArray, '/position_controller/commands', 10)
+
 
 
 
@@ -38,8 +40,8 @@ class controller(Node):
 
         
 
-        rotation_deg_front_wheel1 = math.degrees(steering_angle)
-        rotation_deg_front_wheel2 = math.degrees(steering_angle)
+        # rotation_deg_front_wheel1 = math.degrees(steering_angle)
+        # rotation_deg_front_wheel2 = math.degrees(steering_angle)
 
 
         speed_front_wheel1 = v / wheel_radius
@@ -49,15 +51,19 @@ class controller(Node):
 
         pub_msg = Float64MultiArray()
         pub_msg.data = [
-        rotation_deg_front_wheel1,
-        rotation_deg_front_wheel2,
         speed_front_wheel1,
         speed_front_wheel2,
         speed_back_wheel1,
         speed_back_wheel2
         ]
 
-        self.wheels_pub.publish(pub_msg)
+        self.wheels_pub_velo.publish(pub_msg)
+        print(steering_angle)
+        pub_msg_position = Float64MultiArray()
+        pub_msg_position.data = [steering_angle,
+        steering_angle]
+
+        self.wheels_pub_position.publish(pub_msg_position)
 
 
 
