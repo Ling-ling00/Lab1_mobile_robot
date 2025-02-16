@@ -4,64 +4,92 @@ import rclpy
 from rclpy.node import Node
 from gazebo_msgs.msg import ModelStates
 from nav_msgs.msg import Odometry
+from tf2_ros import TransformBroadcaster
+from geometry_msgs.msg import TransformStamped, Point, Vector3, Quaternion
 import yaml
 
 class ModelNode(Node):
     def __init__(self):
         super().__init__('model_node')
 
+        self.dt = 0.1
+        self.create_timer(self.dt, self.timer_callback)
+
         self.create_subscription(ModelStates, '/gazebo/model_states', self.model_states_callback, 10)
 
         self.odom_publisher = self.create_publisher(Odometry, "/model_odom", 10)
+        self.tf_broadcaster = TransformBroadcaster(self)
 
         self.odom_file = open("odom_data.yaml", "a")
+        self.pos = Point()
+        self.ori = Quaternion()
+        self.lin = Vector3()
+        self.ang = Vector3()
 
+    def timer_callback(self):
+        t = TransformStamped()
+        t.header.stamp = self.get_clock().now().to_msg()
+        t.header.frame_id = "odom"
+        t.child_frame_id = "base_link"
 
-    def model_states_callback(self, msg:ModelStates):
+        t.transform.translation.x = self.pos.x
+        t.transform.translation.y = self.pos.y
+        t.transform.translation.z = self.pos.z
+        t.transform.rotation = self.ori
+        # ส่ง TF
+        self.tf_broadcaster.sendTransform(t)
+
         odom_msg = Odometry()
         odom_msg.header.stamp = self.get_clock().now().to_msg()
-        odom_msg.header.frame_id = "world"
-        odom_msg.child_frame_id = "model"
+        odom_msg.header.frame_id = "odom"
+        odom_msg.child_frame_id = "base_link"
+
+        odom_msg.pose.pose.position = self.pos
+        odom_msg.pose.pose.orientation = self.ori
+        odom_msg.twist.twist.linear = self.lin
+        odom_msg.twist.twist.angular = self.ang
+        self.odom_publisher.publish(odom_msg)
+        print("pub")
+        
+
+    def model_states_callback(self, msg:ModelStates):
         for i in range(len(msg.name)):
             if msg.name[i] == "example":
                 index = i
-        odom_msg.pose.pose = msg.pose[index]
-        odom_msg.twist.twist = msg.twist[index]
-        self.odom_publisher.publish(odom_msg)
 
         # Convert the timestamp to seconds (including nanoseconds).
-        stamp = odom_msg.header.stamp
+        stamp = self.get_clock().now().to_msg()
         timestamp_sec = stamp.sec + stamp.nanosec * 1e-9
 
         # Extract pose and twist information.
-        pos = odom_msg.pose.pose.position
-        ori = odom_msg.pose.pose.orientation
-        lin = odom_msg.twist.twist.linear
-        ang = odom_msg.twist.twist.angular
+        self.pos = msg.pose[index].position
+        self.ori = msg.pose[index].orientation
+        self.lin = msg.twist[index].linear
+        self.ang = msg.twist[index].angular
 
          # Create a dictionary to represent the odometry message.
         data = {
             'timestamp': timestamp_sec,
             'position': {
-                'x': pos.x,
-                'y': pos.y,
-                'z': pos.z
+                'x': self.pos.x,
+                'y': self.pos.y,
+                'z': self.pos.z
             },
             'orientation': {
-                'x': ori.x,
-                'y': ori.y,
-                'z': ori.z,
-                'w': ori.w
+                'x': self.ori.x,
+                'y': self.ori.y,
+                'z': self.ori.z,
+                'w': self.ori.w
             },
             'linear': {
-                'x': lin.x,
-                'y': lin.y,
-                'z': lin.z
+                'x': self.lin.x,
+                'y': self.lin.y,
+                'z': self.lin.z
             },
             'angular': {
-                'x': ang.x,
-                'y': ang.y,
-                'z': ang.z
+                'x': self.ang.x,
+                'y': self.ang.y,
+                'z': self.ang.z
             }
         }
 

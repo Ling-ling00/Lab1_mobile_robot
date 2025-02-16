@@ -3,6 +3,7 @@
 import rclpy
 from rclpy.node import Node
 from control_msgs.msg import DynamicJointState
+from sensor_msgs.msg import JointState
 from gazebo_msgs.msg import LinkStates
 from nav_msgs.msg import Odometry
 import numpy as np
@@ -17,7 +18,7 @@ class DoubleTrackNode(Node):
 
         self.create_timer(self.dt, self.timer_callback)
 
-        self.create_subscription(DynamicJointState, '/dynamic_joint_states', self.joint_states_callback, 10)
+        self.create_subscription(JointState, '/joint_states', self.joint_states_callback, 10)
         self.create_subscription(LinkStates, '/gazebo/link_states', self.link_states_callback, 10)
 
         self.odom_publisher1 = self.create_publisher(Odometry, "/double_track_odom", 10)
@@ -38,26 +39,26 @@ class DoubleTrackNode(Node):
         self.odom = new_odom
         self.odom_pub(self.odom)
 
-    def joint_states_callback(self, msg:DynamicJointState):
+    def joint_states_callback(self, msg:JointState):
         index_l, index_r = None, None
-        for i in range(len(msg.joint_names)):
-            if msg.joint_names[i] == "left_joint_b":
+        for i in range(len(msg.name)):
+            if msg.name[i] == "left_joint_b":
                 index_l = i
-            elif msg.joint_names[i] == "right_joint_b":
+            elif msg.name[i] == "right_joint_b":
                 index_r = i
 
         if index_l is not None and index_r is not None:
-            if msg.interface_values[index_l].values[1] > 0:
+            if msg.velocity[index_l] > 0:
                 self.direction[1] = 1
             else:
                 self.direction[1] = -1
 
-            if msg.interface_values[index_r].values[1] > 0:
+            if msg.velocity[index_r] > 0:
                 self.direction[0] = 1
             else:
                 self.direction[0] = -1
-            
-            # self.vel_rear = [msg.interface_values[index_r].values[1]*0.045, msg.interface_values[index_l].values[1]*0.045]  
+
+            self.vel_rear = [msg.velocity[index_r]*0.045, msg.velocity[index_l]*0.045]
 
     def link_states_callback(self, msg:LinkStates):
         index_l, index_r = None, None
@@ -67,14 +68,14 @@ class DoubleTrackNode(Node):
             elif msg.name[i] == "example::right_wheel_b":
                 index_r = i
 
-        if index_l is not None and index_r is not None:
-            self.vel_rear = [np.sqrt(msg.twist[index_r].linear.x**2 + msg.twist[index_r].linear.y**2)*self.direction[0],
-                              np.sqrt(msg.twist[index_l].linear.x**2 + msg.twist[index_l].linear.y**2)*self.direction[1]]
+        # if index_l is not None and index_r is not None:
+        #     self.vel_rear = [np.sqrt(msg.twist[index_r].linear.x**2 + msg.twist[index_r].linear.y**2)*self.direction[0],
+        #                       np.sqrt(msg.twist[index_l].linear.x**2 + msg.twist[index_l].linear.y**2)*self.direction[1]]
     
     def odom_pub(self, odom):
         odom_msg = Odometry()
         odom_msg.header.stamp = self.get_clock().now().to_msg()
-        odom_msg.header.frame_id = "world"
+        odom_msg.header.frame_id = "odom"
         odom_msg.child_frame_id = "double"
         odom_msg.pose.pose.position.x = odom[0]
         odom_msg.pose.pose.position.y = odom[1]

@@ -2,6 +2,7 @@
 <robot xmlns:xacro="http://www.ros.org/wiki/xacro" name="robot">
 
     <xacro:include filename="gazebo.xacro"/>
+    <xacro:include filename="imu.xacro"/>
 
     <!-- BASE LINK -->
 
@@ -131,7 +132,7 @@
             effort="10.0" 
             lower="-3.14159265359" 
             upper="3.14159265359" 
-            velocity="10.0"
+            velocity="20.0"
             />
     </joint>
 
@@ -144,7 +145,7 @@
             effort="10.0" 
             lower="-3.14159265359" 
             upper="3.14159265359" 
-            velocity="10.0"
+            velocity="20.0"
             />
     </joint>
 
@@ -169,7 +170,7 @@
             effort="10.0" 
             lower="-3.14159265359" 
             upper="3.14159265359" 
-            velocity="10.0"
+            velocity="20.0"
             />
     </joint>
 
@@ -194,7 +195,7 @@
             effort="10.0" 
             lower="-3.14159265359" 
             upper="3.14159265359" 
-            velocity="10.0"
+            velocity="20.0"
             />
     </joint>
 
