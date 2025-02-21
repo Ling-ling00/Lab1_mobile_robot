@@ -34,6 +34,8 @@ install(PROGRAMS
   scripts/double_track.py
   scripts/single_track.py
   scripts/model_odom.py
+  scripts/gps_emulator.py
+  scripts/ekf_node.py
   DESTINATION lib/${PROJECT_NAME}
 )
 

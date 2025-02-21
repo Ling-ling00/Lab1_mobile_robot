@@ -10,8 +10,11 @@ from launch.actions import DeclareLaunchArgument, IncludeLaunchDescription
 from launch.launch_description_sources import PythonLaunchDescriptionSource
 from launch_ros.actions import Node
 import xacro  
+from launch.actions import SetEnvironmentVariable
+
 def generate_launch_description():
     package_name = "lab1_robot_description"
+    model_path =  get_package_share_directory(package_name) + '/models'
     rviz_file_name = "gazebo.rviz"
     rviz_file_path = os.path.join(
         get_package_share_directory(package_name),
@@ -95,6 +98,7 @@ def generate_launch_description():
     # Launch!
     return LaunchDescription(
         [   
+            SetEnvironmentVariable(name='GAZEBO_MODEL_PATH', value=model_path),
             gazebo,
             spawn_entity,
             rsp,

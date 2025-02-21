@@ -27,6 +27,10 @@ def generate_launch_description():
             package=package_name,
             executable='yaw_rate.py',
     )
+    gps = Node(
+            package=package_name,
+            executable='gps_emulator.py',
+    )
     rviz = Node(
         package="rviz2",
         executable="rviz2",
@@ -40,5 +44,6 @@ def generate_launch_description():
         single_track,
         double_track,
         yaw_rate,
+        gps,
         rviz
     ])
